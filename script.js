@@ -1,4 +1,11 @@
 /* global XMLHttpRequest, JSON, moment */
+function getUrl (url, cb) {
+  var req = new XMLHttpRequest()
+  req.addEventListener('load', cb)
+  req.open('GET', url)
+  req.send()
+}
+
 function parseGithub (events, cb) {
   if (events.length === 0) {
     return cb([])
@@ -7,7 +14,7 @@ function parseGithub (events, cb) {
   var activities = []
 
   var siteName = 'Github'
-  var siteIcon = 'https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png'
+  var siteIcon = '<i class="fa fa-github-alt"></i>'
   var username = events[0].actor.login
   for (var i = 0; i < events.length; i++) {
     var event = events[i]
@@ -27,12 +34,44 @@ function parseGithub (events, cb) {
 function getGithub (username, cb) {
   var url = 'https://api.github.com/users/' + username + '/events'
 
-  var req = new XMLHttpRequest()
-  req.addEventListener('load', function () {
+  getUrl(url, function () {
     parseGithub(JSON.parse(this.responseText), cb)
   })
-  req.open('GET', url)
-  req.send()
+}
+
+function parseReddit (events, cb) {
+  if (events.length === 0) {
+    return cb([])
+  }
+
+  var activities = []
+
+  var siteName = 'reddit'
+  var siteIcon = '<i class="fa fa-reddit-alien"></i>'
+  var username = events.data.children[0].data.author
+
+  for (var i = 0; i < events.data.children.length; i++) {
+    var event = events.data.children[i]
+
+    var activity = {
+      siteName: siteName,
+      siteIcon: siteIcon,
+      date: moment.unix(event.data.created_utc),
+      content: username + ' posted in ' + event.data.subreddit
+    }
+
+    activities.push(activity)
+  }
+
+  cb(activities)
+}
+
+function getReddit (username, cb) {
+  var url = 'https://api.reddit.com/user/' + username + '/overview'
+
+  getUrl(url, function () {
+    parseReddit(JSON.parse(this.responseText), cb)
+  })
 }
 
 function sort (activities) {
@@ -59,9 +98,14 @@ function display (activities) {
 }
 
 var allActivities = []
-getGithub('supersam654', function (activities) {
+function addActivities (activities) {
   for (var i = 0; i < activities.length; i++) {
     allActivities.push(activities[i])
   }
   display(allActivities)
-})
+}
+
+var username = 'supersam654'
+
+getGithub(username, addActivities)
+getReddit(username, addActivities)
