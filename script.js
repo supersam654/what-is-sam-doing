@@ -1,10 +1,31 @@
-/* global XMLHttpRequest, JSON, moment */
+/* global XMLHttpRequest, moment */
 function getUrl (url, cb) {
   var req = new XMLHttpRequest()
   req.addEventListener('load', cb)
   req.open('GET', url)
   req.send()
 }
+
+// http://stackoverflow.com/a/12034334
+var escapes = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+  '/': '&#x2F;'
+}
+
+// HTML encode a string.
+// Aweful name to make some bad lines a tad shorter.
+function e (string) {
+  return String(string).replace(/[&<>"'\/]/g, function (s) {
+    return escapes[s]
+  })
+}
+
+// Aweful name to make some bad lines a tad shorter.
+var u = encodeURI
 
 function parseGithub (events, cb) {
   if (events.length === 0) {
@@ -15,14 +36,37 @@ function parseGithub (events, cb) {
 
   var siteName = 'Github'
   var siteIcon = '<i class="fa fa-4x fa-github-alt"></i>'
-  var username = events[0].actor.login
+  var usernameLink = '<a href="' + e(u(events[0].actor.url)) + '">' + e(events[0].actor.login) + '</a>'
   for (var i = 0; i < events.length; i++) {
     var event = events[i]
+    var repoLink = '<a href="' + e(u(event.repo.url)) + '">' + e(event.repo.name) + '</a>'
+    var branchLink = '<a href="' + e(u(event.repo.url + '/tree/' + event.payload.ref)) + '">' + e(event.payload.ref) + '</a>'
+    var content = usernameLink
+
+    if (event.type === 'DeleteEvent') {
+      content += ' deleted the ' + e(event.payload.ref_type) + ' <code>' + e(event.payload.ref) + '</code> at ' + repoLink
+    } else if (event.type === 'CreateEvent') {
+      if (event.payload.ref_type === 'repository') {
+        content += ' created the repository ' + repoLink
+      } else {
+        content += ' created the ' + e(event.payload.ref_type) + ' <code>' + branchLink + '</code> at ' + repoLink
+      }
+    } else if (event.type === 'IssueCommentEvent') {
+      var issueLink = '<a href="' + e(u(event.payload.comment.html_url)) + '">' + e(event.payload.issue.title) + '</a> at ' + repoLink
+      content = usernameLink + ' commented on the issue ' + issueLink + ' with <i>' + e(event.payload.comment.body) + '</i>'
+    } else if (event.type === 'PushEvent') {
+      content = usernameLink + ' pushed to ' + branchLink + ' at ' + repoLink
+    } else {
+      console.log('Unknown Github event.')
+      console.log(event)
+      content = usernameLink + ' did an unknown thingy on Github.'
+    }
+
     var activity = {
       siteName: siteName,
       siteIcon: siteIcon,
       date: moment(event.created_at),
-      content: username + ' made a ' + event.type
+      content: content
     }
 
     activities.push(activity)
@@ -32,7 +76,7 @@ function parseGithub (events, cb) {
 }
 
 function getGithub (username, cb) {
-  var url = 'https://api.github.com/users/' + username + '/events'
+  var url = 'https://api.github.com/users/' + u(username) + '/events'
 
   getUrl(url, function () {
     parseGithub(JSON.parse(this.responseText), cb)
@@ -111,7 +155,7 @@ function parseActivity (activity) {
     '        <span class="hidden-xs">' + activity.siteIcon + '</span>' +
     '      </div>' +
     '      <div class="col-md-11">' +
-    '        <p>' + activity.content + ' ' + activity.date.fromNow() + '</p>' +
+    '        <p>' + activity.content + ' <span class="text-muted">' + activity.date.fromNow() + '</span></p>' +
     '      </div>' +
     '    </div>' +
     '  </div>' +
