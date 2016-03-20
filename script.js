@@ -105,7 +105,36 @@ function addActivities (activities) {
   display(allActivities)
 }
 
-var username = 'supersam654'
+services = {
+  'github': getGithub,
+  'reddit': getReddit
+}
 
-getGithub(username, addActivities)
-getReddit(username, addActivities)
+function printError () {
+  console.log('Could not find requested user.')
+}
+
+function getKeybase (username) {
+  url = 'https://keybase.io/_/api/1.0/user/lookup.json?username=' + username
+
+  getUrl(url, function () {
+    var data = JSON.parse(this.responseText)
+
+    if (data.status.code !== 0) {
+      printError()
+      return
+    }
+
+    var profiles = data.them.proofs_summary.all
+    for (var i = 0; i < profiles.length; i++) {
+      var profile = profiles[i]
+      var username = profile.nametag
+      var service = profile.proof_type
+
+      var getData = services[service] || function () {}
+      getData(username, addActivities)
+    }
+  })
+}
+
+getKeybase('supersam654')
