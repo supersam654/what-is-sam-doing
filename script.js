@@ -14,7 +14,7 @@ function parseGithub (events, cb) {
   var activities = []
 
   var siteName = 'Github'
-  var siteIcon = '<i class="fa fa-github-alt"></i>'
+  var siteIcon = '<i class="fa fa-4x fa-github-alt"></i>'
   var username = events[0].actor.login
   for (var i = 0; i < events.length; i++) {
     var event = events[i]
@@ -47,7 +47,7 @@ function parseReddit (events, cb) {
   var activities = []
 
   var siteName = 'reddit'
-  var siteIcon = '<i class="fa fa-reddit-alien"></i>'
+  var siteIcon = '<i class="fa fa-4x fa-reddit-alien"></i>'
   var username = events.data.children[0].data.author
 
   for (var i = 0; i < events.data.children.length; i++) {
@@ -83,7 +83,17 @@ function sort (activities) {
 function parseActivity (activity) {
   return '' +
     '<div class="col-md-12">' +
-    '  <p>' + activity.content + ' ' + activity.date.fromNow() + '</p>' +
+    '  <div class="panel panel-default">' +
+    '    <div class="panel-body">' +
+    '      <div class="col-md-1">' +
+    '        <h2>' + activity.siteName + '</h2>' +
+    '        <span class="hidden-xs">' + activity.siteIcon + '</span>' +
+    '      </div>' +
+    '      <div class="col-md-11">' +
+    '        <p>' + activity.content + ' ' + activity.date.fromNow() + '</p>' +
+    '      </div>' +
+    '    </div>' +
+    '  </div>' +
     '</div>'
 }
 
