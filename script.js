@@ -49,15 +49,36 @@ function parseReddit (events, cb) {
   var siteName = 'reddit'
   var siteIcon = '<i class="fa fa-4x fa-reddit-alien"></i>'
   var username = events.data.children[0].data.author
+  var usernameLink = '<a href="https://www.reddit.com/user/' + username + '">' + username + '</a>'
 
   for (var i = 0; i < events.data.children.length; i++) {
-    var event = events.data.children[i]
+    var kind = events.data.children[i].kind
+    var event = events.data.children[i].data
+
+    var subredditLink = '<a href=https://www.reddit.com/r/"' + event.subreddit + '/">/r/' + event.subreddit + '</a>'
+
+    var content, postTitleLink
+    if (kind === 't3') {
+      // Post
+      postTitleLink = '<h3><a href="' + event.url + '">' + event.title + '</a></h3>'
+      console.log(postTitleLink)
+      content = usernameLink + ' posted ' + postTitleLink + ' in ' + subredditLink
+    } else if (kind === 't1') {
+      // Comment
+      postTitleLink = '<h4><a href="' + event.link_url + '">' + event.link_title + '</a></h4>'
+      var comment = event.body
+      content = usernameLink + ' commented on ' + postTitleLink + ' with <i>' + comment + '</i> in ' + subredditLink
+    } else {
+      console.log('Unknown reddit event.')
+      console.log(event)
+      content = usernameLink + ' did an unknown thingy on reddit.'
+    }
 
     var activity = {
       siteName: siteName,
       siteIcon: siteIcon,
-      date: moment.unix(event.data.created_utc),
-      content: username + ' posted in ' + event.data.subreddit
+      date: moment.unix(event.created_utc),
+      content: content
     }
 
     activities.push(activity)
@@ -115,7 +136,7 @@ function addActivities (activities) {
   display(allActivities)
 }
 
-services = {
+var services = {
   'github': getGithub,
   'reddit': getReddit
 }
@@ -125,7 +146,7 @@ function printError () {
 }
 
 function getKeybase (username) {
-  url = 'https://keybase.io/_/api/1.0/user/lookup.json?username=' + username
+  var url = 'https://keybase.io/_/api/1.0/user/lookup.json?username=' + username
 
   getUrl(url, function () {
     var data = JSON.parse(this.responseText)

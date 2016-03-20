@@ -2,3 +2,7 @@ h2 {
   margin-top: 0;
   font-size: 24px;
 }
+
+.panel h3, .panel h4, .panel p {
+  display: inline;
+}
