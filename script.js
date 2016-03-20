@@ -105,7 +105,6 @@ function parseReddit (events, cb) {
     if (kind === 't3') {
       // Post
       postTitleLink = '<h3><a href="' + event.url + '">' + event.title + '</a></h3>'
-      console.log(postTitleLink)
       content = usernameLink + ' posted ' + postTitleLink + ' in ' + subredditLink
     } else if (kind === 't1') {
       // Comment
@@ -172,7 +171,7 @@ function display (activities) {
   document.getElementById('content').innerHTML = html
 }
 
-var allActivities = []
+var allActivities
 function addActivities (activities) {
   for (var i = 0; i < activities.length; i++) {
     allActivities.push(activities[i])
@@ -200,6 +199,7 @@ function getKeybase (username) {
       return
     }
 
+    allActivities = []
     var profiles = data.them.proofs_summary.all
     for (var i = 0; i < profiles.length; i++) {
       var profile = profiles[i]
@@ -212,4 +212,13 @@ function getKeybase (username) {
   })
 }
 
-getKeybase('supersam654')
+function search (e) {
+  e.preventDefault()
+  var username = this.username.value
+  console.log(username)
+
+  if (username) {
+    getKeybase(username)
+  }
+}
+document.getElementById('form').addEventListener('submit', search)
